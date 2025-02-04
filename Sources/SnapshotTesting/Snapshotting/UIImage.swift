@@ -34,6 +34,9 @@
           let message = compare(
             old, new, precision: precision, perceptualPrecision: perceptualPrecision)
         else { return nil }
+        if isSwiftTesting {
+          return (message, [])
+        }
         let difference = SnapshotTesting.diff(old, new)
         let isEmptyImage = new.size == .zero
         let referenceAttachment = DiffAttachment.data(toData(old), name: "reference.png")
