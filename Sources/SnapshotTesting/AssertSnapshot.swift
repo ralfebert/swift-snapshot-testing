@@ -112,6 +112,8 @@ public func assertSnapshot<Value, Format>(
   as snapshotting: Snapshotting<Value, Format>,
   named name: String? = nil,
   record: SnapshotTestingConfiguration.Record? = nil,
+  snapshotDirName: String = "__Snapshots__",
+  forceName: String? = nil,
   timeout: TimeInterval = 5,
   fileID: StaticString = #fileID,
   file filePath: StaticString = #filePath,
@@ -124,6 +126,8 @@ public func assertSnapshot<Value, Format>(
     as: snapshotting,
     named: name,
     record: record,
+    snapshotDirName: snapshotDirName,
+    forceName: forceName,
     timeout: timeout,
     fileID: fileID,
     file: filePath,
@@ -286,6 +290,8 @@ public func verifySnapshot<Value, Format>(
   named name: String? = nil,
   record: SnapshotTestingConfiguration.Record? = nil,
   snapshotDirectory: String? = nil,
+  snapshotDirName: String = "__Snapshots__",
+  forceName: String? = nil,
   timeout: TimeInterval = 5,
   fileID: StaticString = #fileID,
   file filePath: StaticString = #file,
@@ -317,9 +323,13 @@ public func verifySnapshot<Value, Format>(
         let snapshotsBaseUrl = fileUrl.deletingLastPathComponent()
       #endif
 
-      let snapshotDirectoryUrl =
+      var snapshotDirectoryUrl =
         snapshotDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }
-        ?? snapshotsBaseUrl.appendingPathComponent("__Snapshots__").appendingPathComponent(fileName)
+        ?? snapshotsBaseUrl.appendingPathComponent(snapshotDirName)
+
+      if forceName == nil {
+        snapshotDirectoryUrl.appendPathComponent(fileName)
+      }
 
       let identifier: String
       if let name = name {
@@ -331,9 +341,10 @@ public func verifySnapshot<Value, Format>(
       }
 
       let testName = sanitizePathComponent(testName)
+      let testFilePath = forceName ?? "\(testName).\(identifier)"
       var snapshotFileUrl =
         snapshotDirectoryUrl
-        .appendingPathComponent("\(testName).\(identifier)")
+        .appendingPathComponent(testFilePath)
       if let ext = snapshotting.pathExtension {
         snapshotFileUrl = snapshotFileUrl.appendingPathExtension(ext)
       }
@@ -472,10 +483,11 @@ public func verifySnapshot<Value, Format>(
         isDirectory: true
       )
       let artifactsSubUrl = artifactsUrl.appendingPathComponent(fileName)
-      try fileManager.createDirectory(at: artifactsSubUrl, withIntermediateDirectories: true)
+      // quick workaround: when snapshotting for different locales, we'll use forceName (with locale-based dir) + create create the directories accordingly
+      // so that screenshots are not overwritten between different locales
       let failedSnapshotFileUrl = artifactsSubUrl.appendingPathComponent(
-        snapshotFileUrl.lastPathComponent
-      )
+        forceName ?? snapshotFileUrl.lastPathComponent)
+      try fileManager.createDirectory(at: failedSnapshotFileUrl.deletingLastPathComponent(), withIntermediateDirectories: true)
       try snapshotting.diffing.toData(diffable).write(to: failedSnapshotFileUrl)
 
       if !attachments.isEmpty {
