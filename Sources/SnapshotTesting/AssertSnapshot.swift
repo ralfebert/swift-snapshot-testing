@@ -104,6 +104,7 @@ public func assertSnapshot<Value, Format>(
   as snapshotting: Snapshotting<Value, Format>,
   named name: String? = nil,
   record recording: Bool? = nil,
+  snapshotDirName: String = "__Snapshots__",
   timeout: TimeInterval = 5,
   fileID: StaticString = #fileID,
   file filePath: StaticString = #filePath,
@@ -116,6 +117,7 @@ public func assertSnapshot<Value, Format>(
     as: snapshotting,
     named: name,
     record: recording,
+    snapshotDirName: snapshotDirName,
     timeout: timeout,
     fileID: fileID,
     file: filePath,
@@ -278,6 +280,7 @@ public func verifySnapshot<Value, Format>(
   named name: String? = nil,
   record recording: Bool? = nil,
   snapshotDirectory: String? = nil,
+  snapshotDirName: String = "__Snapshots__",
   timeout: TimeInterval = 5,
   fileID: StaticString = #fileID,
   file filePath: StaticString = #file,
@@ -312,7 +315,7 @@ public func verifySnapshot<Value, Format>(
 
       let snapshotDirectoryUrl =
         snapshotDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }
-        ?? snapshotsBaseUrl.appendingPathComponent("__Snapshots__").appendingPathComponent(fileName)
+        ?? snapshotsBaseUrl.appendingPathComponent(snapshotDirName).appendingPathComponent(fileName)
 
       let identifier: String
       if let name = name {
